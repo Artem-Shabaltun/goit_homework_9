@@ -13,10 +13,10 @@ def input_error (func): # Декоратор - для обробки помил�
             print("Enter username")
     return wrapper
 
-def sanitize_contacts(phone_num):
+def sanitize_contacts(phone_num): # Функція для прийому різних форматів вводу номера
     new_phone = (
         phone_num.strip()
-        .removeprefix("+")
+        .removeprefix("+38")
         .replace("(","")
         .replace(")","")
         .replace("-","")
@@ -50,6 +50,14 @@ def phone(name): # Пошук телефону за іменем контакт�
         phones += i + " "
     return phones
 
+@input_error
+def show_all(*args): # Показати всі контакти. Приклад : show / show all
+    text = ""
+    for name_user, phone_list in ADDRESSBOOK.items():
+        phones = " ".join(phone_list)
+        text += f"{name_user}: {phones}\n"
+    return text
+
 def exit_handler(*args):
     return "Good bye!"
 
@@ -72,21 +80,22 @@ def input_error(wrap):
 
 
 COMMANDS = {
-    hello_handler: ["hello"],
-    add_handler: ["add", "додай", "+"],
-    change_number: ["change"],
+    hello_handler:["hello"],
+    add_handler:["add", "додай", "+"],
+    change_number:["change"],
     phone:["phone"],
-    exit_handler: ["good bye", "close", "exit"]
+    show_all:["show all", "show"],
+    exit_handler:["good bye", "close", "exit"]
 }
 
 
 def main(): #цикл запит-відповідь
     while True:
-        user_input = input(">>>") # add ...
+        user_input = input("Enter command:") # add >>>
         if not user_input:
             continue
         func, data = command_parser(user_input)
-        print(func, data)
+        # print(func, data)
         result = func(*data)
         print(result)
         if func == exit_handler:
