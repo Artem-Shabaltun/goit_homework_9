@@ -13,15 +13,42 @@ def input_error (func): # Декоратор - для обробки помил�
             print("Enter username")
     return wrapper
 
+def sanitize_contacts(phone_num):
+    new_phone = (
+        phone_num.strip()
+        .removeprefix("+")
+        .replace("(","")
+        .replace(")","")
+        .replace("-","")
+        .replace(" ","")
+    )
+    return new_phone
+
 def hello_handler(*args):
-    return "Hello!"
+    return "Hello! How can I help you?"
 
 @input_error
-def add_handler(data): #функції обробники команд
-    name = data[0].title()
-    phone = data[1]
-    ADDRESSBOOK[name] = phone
-    return f"Contact {name} with phone {phone} is added"
+def add_handler(name, phone_num): # Додаємо контакт в список. Приклад: "add User_name 095-xxx-xx-xx"
+    if name in ADDRESSBOOK:
+        ADDRESSBOOK[name].append(sanitize_contacts(phone_num))
+    if name not in ADDRESSBOOK:
+        ADDRESSBOOK[name] = []
+        ADDRESSBOOK[name].append(sanitize_contacts(phone_num))
+    return f"Contact {name} with phone {sanitize_contacts(phone_num)} is added"
+
+@input_error
+def change_number(name: str, old_num: str, new_num): # Заміна старого номеру телефону на новий. Приклад: "change User_name 095-xxx-xx-xx 050-xxx-xx-xx"
+    if name in ADDRESSBOOK:
+        ADDRESSBOOK[name].remove(sanitize_contacts(old_num))
+        ADDRESSBOOK[name].append(sanitize_contacts(new_num))
+    return f"Changed contact {name} - old number {sanitize_contacts(old_num)} to new number {sanitize_contacts(new_num)}"
+
+@input_error
+def phone(name): # Пошук телефону за іменем контакту. Приклад : phone User_name
+    phones = ""
+    for i in ADDRESSBOOK[name]:
+        phones += i + " "
+    return phones
 
 def exit_handler(*args):
     return "Good bye!"
@@ -45,10 +72,13 @@ def input_error(wrap):
 
 
 COMMANDS = {
+    hello_handler: ["hello"],
     add_handler: ["add", "додай", "+"],
-    exit_handler: ["good bye", "close", "exit"],
-    hello_handler: ["hello"]
+    change_number: ["change"],
+    phone:["phone"],
+    exit_handler: ["good bye", "close", "exit"]
 }
+
 
 def main(): #цикл запит-відповідь
     while True:
@@ -57,7 +87,7 @@ def main(): #цикл запит-відповідь
             continue
         func, data = command_parser(user_input)
         print(func, data)
-        result = func(data)
+        result = func(*data)
         print(result)
         if func == exit_handler:
             break
