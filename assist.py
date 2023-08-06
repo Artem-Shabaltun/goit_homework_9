@@ -1,27 +1,47 @@
 
 ADDRESSBOOK = {}
 
+def input_error (func): # Декоратор - для обробки помилок та виводу повідомлення
+    def wrapper(*args):
+        try:
+            return func(*args)
+        except KeyError:
+            print("Enter correct username")
+        except IndexError:
+            print("Give me name and phone please")
+        except ValueError:
+            print("Enter username")
+    return wrapper
+
+def hello_handler(*args):
+    return "Hello!"
+
+@input_error
 def add_handler(data): #функції обробники команд
     name = data[0].title()
     phone = data[1]
     ADDRESSBOOK[name] = phone
     return f"Contact {name} with phone {phone} is added"
 
-
 def exit_handler(*args):
     return "Good bye!"
 
 
-
-def hello_handler(*args):
-    return "Hello!"
-
-
 def command_parser(raw_str): #парсер команд
-    items = raw_str.split()
+    elements = raw_str.split()
     for key,value in COMMANDS.items():
-        if items[0].lower() in value:
-            return key, items [1:]
+        if elements[0].lower() in value:
+            return key, elements [1:]
+        
+
+def input_error(wrap):
+    def inner():
+        try:
+            result = wrap()
+            return result
+        except IndexError:
+            return "Enter user name"
+    return inner
 
 
 COMMANDS = {
@@ -32,7 +52,7 @@ COMMANDS = {
 
 def main(): #цикл запит-відповідь
     while True:
-        user_input = input(">>>") # add Artem 0957108080
+        user_input = input(">>>") # add ...
         if not user_input:
             continue
         func, data = command_parser(user_input)
