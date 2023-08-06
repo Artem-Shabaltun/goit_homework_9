@@ -1,17 +1,17 @@
 
 ADDRESSBOOK = {}
 
-def input_error (func): # Декоратор - для обробки помилок та виводу повідомлення
-    def wrapper(*args):
+def input_error (inner): # Декоратор - для обробки помилок та виводу повідомлення
+    def wrap(*args):
         try:
-            return func(*args)
+            return inner(*args)
         except KeyError:
             print("Enter correct username")
         except IndexError:
             print("Give me name and phone please")
         except ValueError:
             print("Enter username")
-    return wrapper
+    return wrap
 
 def sanitize_contacts(phone_num): # Функція для прийому різних форматів вводу номера
     new_phone = (
@@ -29,26 +29,33 @@ def hello_handler(*args):
 
 @input_error
 def add_handler(name, phone_num): # Додаємо контакт в список. Приклад: "add User_name 095-xxx-xx-xx"
-    if name in ADDRESSBOOK:
-        ADDRESSBOOK[name].append(sanitize_contacts(phone_num))
-    if name not in ADDRESSBOOK:
-        ADDRESSBOOK[name] = []
-        ADDRESSBOOK[name].append(sanitize_contacts(phone_num))
-    return f"Contact {name} with phone {sanitize_contacts(phone_num)} is added"
+    sanitized_phone = sanitize_contacts(phone_num)
+    normalized_name = name.title()
+    if sanitized_phone:
+        if normalized_name in ADDRESSBOOK:
+            ADDRESSBOOK[normalized_name].append(sanitized_phone)
+        else:
+            ADDRESSBOOK[normalized_name] = [sanitized_phone]
+        return f"Contact {normalized_name} with phone {sanitized_phone} is added"
+    else:
+        return "Invalid phone number format"
 
 @input_error
 def change_number(name: str, old_num: str, new_num): # Заміна старого номеру телефону на новий. Приклад: "change User_name 095-xxx-xx-xx 050-xxx-xx-xx"
-    if name in ADDRESSBOOK:
-        ADDRESSBOOK[name].remove(sanitize_contacts(old_num))
-        ADDRESSBOOK[name].append(sanitize_contacts(new_num))
-    return f"Changed contact {name} - old number {sanitize_contacts(old_num)} to new number {sanitize_contacts(new_num)}"
+    normalized_name = name.title()
+    if normalized_name in ADDRESSBOOK:
+        ADDRESSBOOK[normalized_name].remove(sanitize_contacts(old_num))
+        ADDRESSBOOK[normalized_name].append(sanitize_contacts(new_num))
+    return f"Changed contact {normalized_name} - old number {sanitize_contacts(old_num)} to new number {sanitize_contacts(new_num)}"
 
 @input_error
 def phone(name): # Пошук телефону за іменем контакту. Приклад : phone User_name
-    phones = ""
-    for i in ADDRESSBOOK[name]:
-        phones += i + " "
-    return phones
+    normalized_name = name.title()
+    if normalized_name in ADDRESSBOOK:
+        phones = " ".join(ADDRESSBOOK[normalized_name])
+        return f"{normalized_name}: {phones}\n"
+    else:
+        return f"Contact {normalized_name} not found"
 
 @input_error
 def show_all(*args): # Показати всі контакти. Приклад : show / show all
@@ -62,22 +69,12 @@ def exit_handler(*args):
     return "Good bye!"
 
 
-def command_parser(raw_str): #парсер команд
+def command_parser(raw_str): # Парсер команд
     elements = raw_str.split()
     for key,value in COMMANDS.items():
         if elements[0].lower() in value:
             return key, elements [1:]
         
-
-def input_error(wrap):
-    def inner():
-        try:
-            result = wrap()
-            return result
-        except IndexError:
-            return "Enter user name"
-    return inner
-
 
 COMMANDS = {
     hello_handler:["hello"],
@@ -85,10 +82,10 @@ COMMANDS = {
     change_number:["change"],
     phone:["phone"],
     show_all:["show all", "show"],
-    exit_handler:["good bye", "close", "exit"]
+    exit_handler:["good bye", "close", "exit", "end"]
 }
 
-
+@input_error
 def main(): #цикл запит-відповідь
     while True:
         user_input = input("Enter command:") # add >>>
