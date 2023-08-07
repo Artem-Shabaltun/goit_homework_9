@@ -2,102 +2,84 @@
 ADDRESSBOOK = {}
 
 def input_error (inner): # Декоратор - для обробки помилок та виводу повідомлення
-    def wrap(*args):
+    def wrap(*args, **kwargs):
         try:
-            return inner(*args)
+            return inner(*args, **kwargs)
         except KeyError:
-            print("Enter correct username")
-        except IndexError:
-            print("Give me name and phone please")
+            print("Error: The contact not found")
         except ValueError:
-            print("Enter username")
+            print("Error: Please enter username and phone number")
+        except IndexError:
+            print("Error: Please enter username and phone number")
     return wrap
 
-def sanitize_contacts(phone_num): # Функція для прийому різних форматів вводу номера
-    new_phone = (
-        phone_num.strip()
-        .removeprefix("+38")
-        .replace("(","")
-        .replace(")","")
-        .replace("-","")
-        .replace(" ","")
-    )
-    return new_phone
-
-def hello_handler(*args):
-    return "Hello! How can I help you?"
+@input_error
+def add_handler(name, phone_num): # Додаємо контакт в список. Приклад: "add name 095-xxx-xx-xx"
+    if name in ADDRESSBOOK:
+        raise ValueError
+    ADDRESSBOOK[name] = phone_num
+    return f"Contact {name} with phone {phone_num} is added."
 
 @input_error
-def add_handler(name, phone_num): # Додаємо контакт в список. Приклад: "add User_name 095-xxx-xx-xx"
-    sanitized_phone = sanitize_contacts(phone_num)
-    normalized_name = name.title()
-    if sanitized_phone:
-        if normalized_name in ADDRESSBOOK:
-            ADDRESSBOOK[normalized_name].append(sanitized_phone)
-        else:
-            ADDRESSBOOK[normalized_name] = [sanitized_phone]
-        return f"Contact {normalized_name} with phone {sanitized_phone} is added"
+def change_number(name: str, phone_num): # Заміна старого номеру телефону на новий. Приклад: "change name 050-xxx-xx-xx"
+    if name not in ADDRESSBOOK:
+        raise KeyError
     else:
-        return "Invalid phone number format"
+        ADDRESSBOOK[name] = phone_num
+        return f"Changed contact {name} number to {phone_num}."
 
 @input_error
-def change_number(name: str, old_num: str, new_num): # Заміна старого номеру телефону на новий. Приклад: "change User_name 095-xxx-xx-xx 050-xxx-xx-xx"
-    normalized_name = name.title()
-    if normalized_name in ADDRESSBOOK:
-        ADDRESSBOOK[normalized_name].remove(sanitize_contacts(old_num))
-        ADDRESSBOOK[normalized_name].append(sanitize_contacts(new_num))
-    return f"Changed contact {normalized_name} - old number {sanitize_contacts(old_num)} to new number {sanitize_contacts(new_num)}"
-
-@input_error
-def phone(name): # Пошук телефону за іменем контакту. Приклад : phone User_name
-    normalized_name = name.title()
-    if normalized_name in ADDRESSBOOK:
-        phones = " ".join(ADDRESSBOOK[normalized_name])
-        return f"{normalized_name}: {phones}\n"
-    else:
-        return f"Contact {normalized_name} not found"
+def get_phone(name): # Пошук телефону за іменем контакту. Приклад : phone name
+    if name not in ADDRESSBOOK:
+        raise KeyError
+    return f"{name}'s phone number is {ADDRESSBOOK[name]}. "
 
 @input_error
 def show_all(*args): # Показати всі контакти. Приклад : show / show all
-    text = ""
-    for name_user, phone_list in ADDRESSBOOK.items():
-        phones = " ".join(phone_list)
-        text += f"{name_user}: {phones}\n"
-    return text
+    if not ADDRESSBOOK:
+        raise ValueError
+    result = "Contacts:\n"
+    for name, phone_num in ADDRESSBOOK.items():
+        result += f"{name}: {phone_num}\n"
+    return result
 
-def exit_handler(*args):
-    return "Good bye!"
-
-
-def command_parser(raw_str): # Парсер команд
-    elements = raw_str.split()
-    for key,value in COMMANDS.items():
-        if elements[0].lower() in value:
-            return key, elements [1:]
+def print_error_output (message):
+    print("Error: ", message)
         
-
-COMMANDS = {
-    hello_handler:["hello"],
-    add_handler:["add", "додай", "+"],
-    change_number:["change"],
-    phone:["phone"],
-    show_all:["show all", "show"],
-    exit_handler:["good bye", "close", "exit", "end"]
-}
 
 @input_error
 def main(): #цикл запит-відповідь
+
+    COMMANDS = {
+    "hello": lambda: print("Hello, how can I help you?\n"),
+    "show all": lambda: print(show_all()),
+    "add": lambda: print(add_handler(user_devided[1], user_devided[2])) if len(user_devided) == 3 else print_error_output("write correct username and phone number."),
+    "change": lambda: print(change_number(user_devided[1], user_devided[2])) if len(user_devided) == 3 else print_error_output("write name and phone."),
+    "phone": lambda: print(get_phone(user_devided[1])) if len(user_devided) == 2 else print_error_output("write name."),
+    "good bye": lambda: print("Good bye!"),
+    "exit": lambda: print("Good bye!"),
+    "close": lambda: print("Good bye!"),
+    "end": lambda: print("Good bye!")
+}
     while True:
-        user_input = input("Enter command:") # add >>>
-        if not user_input:
-            continue
-        func, data = command_parser(user_input)
-        # print(func, data)
-        result = func(*data)
-        print(result)
-        if func == exit_handler:
-            break
-        print(ADDRESSBOOK)
+        user_input = input("Enter command \t")
+        user_devided = user_input.split(maxsplit=2)
+        result_text = ""
+        for char in user_input:
+            if char != " ":
+                result_text += char.lower()
+            else:break
+        
+        if result_text in COMMANDS:
+            COMMANDS[result_text]()
+            if result_text in ["close", "exit", "end"]:
+                break
+        elif user_input.lower() in COMMANDS:
+            COMMANDS[user_input.lower()]()
+            if user_input.lower() == "good bye":
+                break
+        else:
+            print("Uncorrect. Use the command 'hello', 'add', 'change', 'phone', 'show all', 'good bye', 'exit', 'close', 'end' " )
     
 if __name__== "__main__":
     main()
