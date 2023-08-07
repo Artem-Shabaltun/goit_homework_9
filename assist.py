@@ -13,26 +13,44 @@ def input_error (inner): # Декоратор - для обробки помил
             print("Error: Please enter username and phone number")
     return wrap
 
+def normalize_name(name):
+    return name.upper() # Переводимо всі імена в верхній регістр для реалізації незалежності команд від регістру вводу.
+
+def sanitize_contacts(phone_num): # Форматуємо номер телефону для списку контактів, незалежно від формату вводу
+    new_phone = (
+        phone_num.strip()
+        .removeprefix("+38")
+        .replace("(", "")
+        .replace(")", "")
+        .replace("-", "")
+        .replace(" ", "")
+    )
+    return new_phone
+
 @input_error
 def add_handler(name, phone_num): # Додаємо контакт в список. Приклад: "add name 095-xxx-xx-xx"
-    if name in ADDRESSBOOK:
+    normalized_name = normalize_name(name)
+    if normalized_name in ADDRESSBOOK:
         raise ValueError
-    ADDRESSBOOK[name] = phone_num
-    return f"Contact {name} with phone {phone_num} is added."
+    sanitize_phone = sanitize_contacts(phone_num)
+    ADDRESSBOOK[normalized_name] = sanitize_phone
+    return f"Contact {normalized_name} with phone {sanitize_phone} is added."
 
 @input_error
 def change_number(name: str, phone_num): # Заміна старого номеру телефону на новий. Приклад: "change name 050-xxx-xx-xx"
-    if name not in ADDRESSBOOK:
+    normalized_name = normalize_name(name)
+    if normalized_name not in ADDRESSBOOK:
         raise KeyError
-    else:
-        ADDRESSBOOK[name] = phone_num
-        return f"Changed contact {name} number to {phone_num}."
+    sanitize_phone = sanitize_contacts(phone_num)
+    ADDRESSBOOK[normalized_name] = sanitize_phone
+    return f"Changed contact {normalized_name} number to {sanitize_phone}."
 
 @input_error
 def get_phone(name): # Пошук телефону за іменем контакту. Приклад : phone name
-    if name not in ADDRESSBOOK:
+    normalized_name = normalize_name(name)
+    if normalized_name not in ADDRESSBOOK:
         raise KeyError
-    return f"{name}'s phone number is {ADDRESSBOOK[name]}. "
+    return f"{normalized_name}'s phone number is {ADDRESSBOOK[name]}. "
 
 @input_error
 def show_all(*args): # Показати всі контакти. Приклад : show / show all
@@ -48,7 +66,7 @@ def print_error_output (message):
         
 
 @input_error
-def main(): #цикл запит-відповідь
+def main(): #цикл запит-відповідь для взаємодії з користувачем
 
     COMMANDS = {
     "hello": lambda: print("Hello, how can I help you?\n"),
