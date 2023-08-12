@@ -50,54 +50,86 @@ def get_phone(name): # Пошук телефону за іменем конта�
     normalized_name = normalize_name(name)
     if normalized_name not in ADDRESSBOOK:
         raise KeyError
-    return f"{normalized_name}'s phone number is {ADDRESSBOOK[name]}. "
+    return f"{normalized_name}'s phone number is {ADDRESSBOOK[normalized_name]}. "
 
 @input_error
-def show_all(*args): # Показати всі контакти. Приклад : show / show all
+def show_all_command(*args): # Показати всі контакти. Приклад : show / show all
     if not ADDRESSBOOK:
-        raise ValueError
-    result = "Contacts:\n"
-    for name, phone_num in ADDRESSBOOK.items():
-        result += f"{name}: {phone_num}\n"
-    return result
+        print_error_output("The contacts list is empty")
+    else:
+        try:
+            result = "Contacts:\n"
+            for name, phone_num in ADDRESSBOOK.items():
+                result += f"{name}: {phone_num}\n"
+            print(result)
+        except ValueError as e:
+            print_error_output(e)
 
 def print_error_output (message):
     print("Error: ", message)
         
-
 @input_error
-def main(): #цикл запит-відповідь для взаємодії з користувачем
+def main(): #цикл запит-відповідь для сценаріїв взаємодії з користувачем
 
     COMMANDS = {
-    "hello": lambda: print("Hello, how can I help you?\n"),
-    "show all": lambda: print(show_all()),
-    "add": lambda: print(add_handler(user_devided[1], user_devided[2])) if len(user_devided) == 3 else print_error_output("write correct username and phone number."),
-    "change": lambda: print(change_number(user_devided[1], user_devided[2])) if len(user_devided) == 3 else print_error_output("write name and phone."),
-    "phone": lambda: print(get_phone(user_devided[1])) if len(user_devided) == 2 else print_error_output("write name."),
-    "good bye": lambda: print("Good bye!"),
-    "exit": lambda: print("Good bye!"),
-    "close": lambda: print("Good bye!"),
-    "end": lambda: print("Good bye!")
-}
+        "HELLO": hello,
+        "SHOW ALL": show_all_command,
+        "SHOW": show_all_command,
+        "ADD": add,
+        "CHANGE": change,
+        "PHONE": phone,
+        "GOOD BYE": goodbye,
+        "EXIT": exit_program,
+        "CLOSE": close_program,
+        "END": end_program,
+    }
     while True:
-        user_input = input("Enter command \t")
+        user_input = input("Enter command: ").upper()
         user_devided = user_input.split(maxsplit=2)
-        result_text = ""
-        for char in user_input:
-            if char != " ":
-                result_text += char.lower()
-            else:break
+        result_text = user_devided[0]
         
         if result_text in COMMANDS:
-            COMMANDS[result_text]()
-            if result_text in ["close", "exit", "end"]:
-                break
-        elif user_input.lower() in COMMANDS:
-            COMMANDS[user_input.lower()]()
-            if user_input.lower() == "good bye":
+            COMMANDS[result_text](user_devided)
+            if result_text in ["CLOSE", "EXIT", "END"]:
                 break
         else:
-            print("Uncorrect. Use the command 'hello', 'add', 'change', 'phone', 'show all', 'good bye', 'exit', 'close', 'end' " )
+            print("Incorrect command. Use the command 'HELLO', 'ADD', 'CHANGE', 'PHONE', 'SHOWALL', 'GOODBYE', 'EXIT', 'CLOSE', 'END' ")
     
+def hello(args):
+        print("Hello, how can I help you?")
+
+def add(args):
+        if len(args) == 3:
+            print(add_handler(args[1], args[2]))
+        else:
+            print_error_output("Write correct username and phone number.")
+    
+def change(args):
+    if len(args) == 3:
+        print(change_number(args[1], args[2]))
+    else:
+        print_error_output("Write name and phone.")
+
+def phone(args):
+    if len(args) == 2:
+        print(get_phone(args[1]))
+    else:
+        print_error_output("Write name.")
+
+def goodbye(args):
+    print("Good bye!")
+
+def exit_program(args):
+    print("Good bye!")
+    exit()
+
+def close_program(args):
+    print("Good bye!")
+    exit()
+
+def end_program(args):
+    print("Good bye!")
+    exit()
+
 if __name__== "__main__":
     main()
